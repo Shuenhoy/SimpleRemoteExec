@@ -55,7 +55,14 @@ namespace SimpleRemoteExec
                 else
                 {
                     logger.LogWarning(args.Data);
-                    socketHelper.Send<ResponseMessage>(clientSocket, new StdoutResponseMessage { Content = args.Data }).Wait();
+                    try
+                    {
+                        socketHelper.Send<ResponseMessage>(clientSocket, new StdoutResponseMessage { Content = args.Data }).Wait();
+                    }
+                    catch
+                    {
+                        process.Kill();
+                    }
                 }
             };
             process.ErrorDataReceived += (sender, args) =>
@@ -67,8 +74,11 @@ namespace SimpleRemoteExec
                 else
                 {
                     logger.LogError(args.Data);
-
-                    socketHelper.Send<ResponseMessage>(clientSocket, new StderrResponseMessage { Content = args.Data }).Wait();
+                    try {
+                        socketHelper.Send<ResponseMessage>(clientSocket, new StderrResponseMessage { Content = args.Data }).Wait();
+                    } catch {
+                        process.Kill();
+                    }
                 }
             };
             process.BeginOutputReadLine();
@@ -77,7 +87,10 @@ namespace SimpleRemoteExec
             await Task.WhenAll(stdoutHandler.Task, stderrHandler.Task, process.WaitForExitAsync());
 
             logger.LogInformation($"Process {process.StartInfo.FileName} {string.Join(" ", process.StartInfo.ArgumentList)} exited with code {process.ExitCode}");
-            await socketHelper.Send<ResponseMessage>(clientSocket, new ExitResponseMessage { ExitCode = process.ExitCode });
+            try {
+                await socketHelper.Send<ResponseMessage>(clientSocket, new ExitResponseMessage { ExitCode = process.ExitCode });
+
+            } catch {}
 
         }
         public void Start(string path)
