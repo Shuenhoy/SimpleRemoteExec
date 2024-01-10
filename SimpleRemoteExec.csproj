@@ -14,7 +14,6 @@
     <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
-    <StaticExecutable>true</StaticExecutable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="MemoryPack" Version="1.10.0" />
