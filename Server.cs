@@ -5,6 +5,7 @@ using System.Threading;
 using System.Diagnostics;
 using MemoryPack;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 
 namespace SimpleRemoteExec
@@ -13,7 +14,13 @@ namespace SimpleRemoteExec
     {
         public Server()
         {
-            using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+            using ILoggerFactory factory = LoggerFactory.Create(builder =>
+                builder.AddSimpleConsole(options =>
+                    {
+                        options.IncludeScopes = true;
+                        options.SingleLine = true;                        
+                    })
+                );
             logger = factory.CreateLogger<Server>();
         }
         private readonly ILogger logger;
@@ -54,7 +61,11 @@ namespace SimpleRemoteExec
                 }
                 else
                 {
-                    logger.LogWarning(args.Data);
+                    using (logger.BeginScope($"\x1B[1m\x1B[32m[stdout {process.Id}]\x1B[0m"))
+                    
+                    {
+                        logger.LogInformation(args.Data);
+                    }
                     try
                     {
                         socketHelper.Send<ResponseMessage>(clientSocket, new StdoutResponseMessage { Content = args.Data }).Wait();
@@ -73,10 +84,16 @@ namespace SimpleRemoteExec
                 }
                 else
                 {
-                    logger.LogError(args.Data);
-                    try {
+                    using (logger.BeginScope($"\x1B[1m\x1B[31m[stderr {process.Id}]\x1B[0m"))
+                    {
+                        logger.LogInformation(args.Data);
+                    }
+                    try
+                    {
                         socketHelper.Send<ResponseMessage>(clientSocket, new StderrResponseMessage { Content = args.Data }).Wait();
-                    } catch {
+                    }
+                    catch
+                    {
                         process.Kill();
                     }
                 }
@@ -87,10 +104,12 @@ namespace SimpleRemoteExec
             await Task.WhenAll(stdoutHandler.Task, stderrHandler.Task, process.WaitForExitAsync());
 
             logger.LogInformation($"Process {process.StartInfo.FileName} {string.Join(" ", process.StartInfo.ArgumentList)} exited with code {process.ExitCode}");
-            try {
+            try
+            {
                 await socketHelper.Send<ResponseMessage>(clientSocket, new ExitResponseMessage { ExitCode = process.ExitCode });
 
-            } catch {}
+            }
+            catch { }
 
         }
         public void Start(string path)
