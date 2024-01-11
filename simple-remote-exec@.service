@@ -1,0 +1,11 @@
+[Unit]
+Description=SimpleRemoteExec server %f
+
+[Service]
+Type=simple
+KillSignal=SIGINT
+ExecStart=/usr/bin/SimpleRemoteExec server %f
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
