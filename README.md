@@ -26,3 +26,10 @@ SimpleRemoteExec server test.sock
 ```bash
 SimpleRemoteExec client test.sock whoami
 ```
+
+## Using as Systemd service
+```bash
+sudo cp ./bin/Release/publish/SimpleRemoteExec /usr/bin
+sudo cp ./simple-remote-exec@.service /etc/systemd/system
+sudo systemctl enable --now simple-remote-exec@$(systemd-escape -f ./sock).service
+```
