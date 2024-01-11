@@ -17,24 +17,21 @@ namespace SimpleRemoteExec
             await socketHelper.Send(clientSocket, new RequestMessage { Commands = commands });
             while (true)
             {
-                if (clientSocket.Poll(80, SelectMode.SelectRead))
-                {
 
-                    var response = socketHelper.Receive<ResponseMessage>(clientSocket);
-                    if (response == null)
+                var response = socketHelper.Receive<ResponseMessage>(clientSocket);
+                if (response == null)
+                    break;
+                switch (response)
+                {
+                    case StdoutResponseMessage stdout:
+                        Console.WriteLine(stdout.Content);
                         break;
-                    switch (response)
-                    {
-                        case StdoutResponseMessage stdout:
-                            Console.WriteLine(stdout.Content);
-                            break;
-                        case StderrResponseMessage stderr:
-                            Console.Error.WriteLine(stderr.Content);
-                            break;
-                        case ExitResponseMessage exit:
-                            Environment.Exit(exit.ExitCode);
-                            break;
-                    }
+                    case StderrResponseMessage stderr:
+                        Console.Error.WriteLine(stderr.Content);
+                        break;
+                    case ExitResponseMessage exit:
+                        Environment.Exit(exit.ExitCode);
+                        break;
                 }
             }
 

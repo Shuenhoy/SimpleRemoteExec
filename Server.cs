@@ -18,7 +18,7 @@ namespace SimpleRemoteExec
                 builder.AddSimpleConsole(options =>
                     {
                         options.IncludeScopes = true;
-                        options.SingleLine = true;                        
+                        options.SingleLine = true;
                     })
                 );
             logger = factory.CreateLogger<Server>();
@@ -62,7 +62,7 @@ namespace SimpleRemoteExec
                 else
                 {
                     using (logger.BeginScope($"\x1B[1m\x1B[32m[stdout {process.Id}]\x1B[0m"))
-                    
+
                     {
                         logger.LogInformation(args.Data);
                     }
@@ -142,21 +142,14 @@ namespace SimpleRemoteExec
                             var cancellationTokenSource = new CancellationTokenSource();
                             var exec = Exec(request.Commands, clientSocket, cancellationTokenSource.Token);
 
-                            while (!exec.IsCompleted)
+                            var buffer = new byte[1];
+                            if (clientSocket.Receive(buffer) == 0)
                             {
-                                if (clientSocket.Poll(80, SelectMode.SelectRead))
-                                {
-                                    var buffer = new byte[1];
-                                    if (clientSocket.Receive(buffer) == 0)
-                                    {
-                                        logger.LogInformation($"Client {clientSocket.RemoteEndPoint} disconnected");
-                                        clientSocket.Close();
-                                        cancellationTokenSource.Cancel();
-                                        return;
-                                    }
-                                }
+                                logger.LogInformation($"Client {clientSocket.RemoteEndPoint} disconnected");
+                                clientSocket.Close();
+                                cancellationTokenSource.Cancel();
+                                return;
                             }
-                            await exec;
                         }
                         catch (Exception ex)
                         {
